@@ -1,11 +1,9 @@
 // Hardware
-#include <Adafruit_GFX.h> // Downloaded dependency, library "Adafruit GFX Library"
-#include <Adafruit_SH110X.h> // Downloaded dependency, library "Adafruit SH110X"
 #include <Arduino.h>
 #include <MFRC522DriverPinSimple.h> // part of MFRC522v2
 #include <MFRC522DriverSPI.h>       // part of MFRC522v2
 #include <MFRC522v2.h> // Downloaded dependency, "library MFRC522v2"
-#include <SPI.h>
+#include <U8g2lib.h>
 
 // Connectivity
 #include <HTTPClient.h>
@@ -34,7 +32,7 @@ MFRC522DriverSPI driver{ss_pin};
 MFRC522 mfrc522{driver};
 
 // I2C
-Adafruit_SH1106G display(128, 64, &Wire, -1);
+U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0);
 
 // Wifi configuration
 // TODO: (only if this project goes beyond prototype) consider adding a way to
@@ -112,33 +110,43 @@ BorrowingData currentBorrowingData;
 void displayErrorDetail() {
     switch (sysError) {
     case OTHERS:
-        display.println("An unknown error occured.");
+        u8g2.drawStr(2, 10, "An unknown error occured");
         break;
 
     case DATABASE_ERROR:
-        display.println(
-            "Something went wrong communicating with the database.");
-        break;
+        u8g2.drawStr(2, 10, "Something went wrong");
+        u8g2.drawStr(2, 20, "when communicating");
+        u8g2.drawStr(2, 30, "with the database.");
 
     case INVALID_CARD:
-        display.println("Your card is not registered in the system.");
+        u8g2.drawStr(2, 10, "Your card");
+        u8g2.drawStr(2, 20, "wis not registered");
+        u8g2.drawStr(2, 30, "in the system.");
         break;
 
     case INVALID_BOOK:
-        display.println("This book is not found in the database");
+        u8g2.drawStr(2, 10, "This book");
+        u8g2.drawStr(2, 20, "is not found");
+        u8g2.drawStr(2, 30, "in the database.");
         break;
 
     case BOOK_BORROWED:
-        display.println("This book has already been borrowed");
+        u8g2.drawStr(2, 10, "This book");
+        u8g2.drawStr(2, 20, "has already been");
+        u8g2.drawStr(2, 30, "borrowed.");
         break;
 
     case DEVICE_ERROR:
-        display.println("The device or a component of the device is not "
-                        "responding as it should.");
+        u8g2.drawStr(2, 10, "The device");
+        u8g2.drawStr(2, 20, "or a component");
+        u8g2.drawStr(2, 30, "of the device");
+        u8g2.drawStr(2, 40, "is not responding");
+        u8g2.drawStr(2, 50, "as it should.");
         break;
 
     case NETWORK_ERROR:
-        display.println("Could not connect to the database.");
+        u8g2.drawStr(2, 10, "Could not connect");
+        u8g2.drawStr(2, 20, "to the database.");
         break;
 
     default:
@@ -147,56 +155,70 @@ void displayErrorDetail() {
 }
 
 void changeScreen(States newScreenState) {
-    display.clearDisplay();
-    display.setCursor(0, 0);
+    u8g2.clearBuffer();
+    u8g2.drawFrame(0, 0, 128, 64);
+    u8g2.setFont(u8g2_font_profont12_tf);
 
     // TODO: Prettier screen
     switch (newScreenState) {
     case IDLE:
-        display.println("Please scan your");
-        display.println("member card to start");
+        u8g2.drawStr((128 - u8g2.getStrWidth("Welcome")) / 2, 10, "Welcome");
+        u8g2.drawLine(0, 12, 128, 12);
+        u8g2.drawStr((128 - u8g2.getStrWidth("Please scan your")) / 2, 22,
+                     "Please scan your");
+        u8g2.drawStr((128 - u8g2.getStrWidth("member card to start")) / 2, 32,
+                     "member card to start");
         break;
 
     case VERIFY_CARD:
-        display.println("Checking card...");
+        u8g2.drawStr((128 - u8g2.getStrWidth("Checking card")) / 2, 10,
+                     "Checking card");
         break;
 
     case SCAN_BOOK:
-        display.println("Welcome, " + currentBorrowingData.memberName);
-        display.println("Please scan the book");
-        display.println("you want to borrow");
-        display.println("or return");
+        u8g2.drawStr(2, 10, "Welcome, ");
+        u8g2.drawStr(2, 20, currentBorrowingData.memberName.c_str());
+        u8g2.drawStr(2, 30, "Please scan the book");
+        u8g2.drawStr(2, 40, "you want to borrow");
+        u8g2.drawStr(2, 50, "or return");
         break;
 
     case VERIFY_BOOK:
-        display.println("Checking book status...");
+        u8g2.drawStr((128 - u8g2.getStrWidth("Checking book status")) / 2, 10,
+                     "Checking book status");
         break;
 
     case CONFIRMATION:
-        display.println("Scanned book: " + currentBorrowingData.bookTitle);
-        display.println("Are you sure you want");
+        u8g2.drawStr(2, 10, "Book: ");
+        u8g2.drawStr(2, 20, currentBorrowingData.bookTitle.c_str());
+        u8g2.drawStr(2, 30, "Are you sure you want");
         if (currentBorrowingData.borrowing) {
-            display.println("to borrow this book?");
+            u8g2.drawStr(2, 40, "to borrow this book?");
         } else {
-            display.println("to return this book?");
+            u8g2.drawStr(2, 40, "to return this book?");
         }
         break;
 
     case DONE:
         if (currentBorrowingData.borrowing) {
-            display.println("Book borrowed");
+            u8g2.drawStr((128 - u8g2.getStrWidth("Book borrowed")) / 2, 10,
+                         "Book borrowed");
         } else {
-            display.println("Book returned");
+            u8g2.drawStr((128 - u8g2.getStrWidth("Book returned")) / 2, 10,
+                         "Book returned");
         }
         break;
 
     case CANCELLED:
-        display.println("Cancelled.");
-        display.println("Scan card again to restart.");
+        u8g2.drawStr((128 - u8g2.getStrWidth("Cancelled")) / 2, 10,
+                     "Cancelled");
+        u8g2.drawStr((128 - u8g2.getStrWidth("Scan again to restart")) / 2, 10,
+                     "Scan again to restart");
         break;
 
     case ERROR:
-        display.println("Error:");
+        u8g2.drawStr((128 - u8g2.getStrWidth("Error")) / 2, 10, "Error");
+        u8g2.drawLine(0, 12, 128, 12);
         displayErrorDetail();
         break;
 
@@ -204,7 +226,7 @@ void changeScreen(States newScreenState) {
         break;
     }
 
-    display.display();
+    u8g2.sendBuffer();
     screenState = newScreenState;
 }
 
@@ -413,14 +435,8 @@ void setup() {
 
     mfrc522.PCD_Init(); // Initialize PCD for RC522
 
-    // I2C Init
-    Wire.begin(SDA_PIN, SCL_PIN);
-
     // Display Init
-    display.begin(0x3C);
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(SH110X_WHITE);
+    u8g2.begin();
 
     // TODO: Self test
 

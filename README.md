@@ -11,8 +11,8 @@ An ESP32 based IoT project to make borrowing books convinient.
 
 ## Dependencies
 - [MFRC522v2](https://github.com/OSSLibraries/Arduino_MFRC522v2)
-- [Adafruit GFX Library](https://github.com/adafruit/Adafruit-GFX-Library)
-- [Adafruit SH110X](https://github.com/adafruit/Adafruit_SH110X)
+- [ArduinoJson](https://github.com/bblanchon/ArduinoJson)
+- [U8g2](https://github.com/olikraus/u8g2)
 
 ## Pin Layout
 | **Module** | **Device Pin** | **ESP32 Pin** | **Notes** |
